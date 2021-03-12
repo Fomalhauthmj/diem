@@ -398,9 +398,6 @@ pub fn setup_environment(node_config: &NodeConfig, logger: Option<Arc<Logger>>) 
         network_builder.start();
     }
 
-    // TODO set up on-chain discovery network based on UpstreamConfig.fallback_network
-    // and pass network handles to mempool/state sync
-
     // for state sync to send requests to mempool
     let (state_sync_to_mempool_sender, state_sync_requests) =
         channel(INTRA_NODE_CHANNEL_BUFFER_SIZE);
