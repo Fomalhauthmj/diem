@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+    "dev-hotstuff",
     "client/faucet",
     "client/json-rpc",
     "client/swiss-knife",
