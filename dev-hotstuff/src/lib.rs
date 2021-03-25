@@ -1,7 +1,3 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+// 贺梦杰 (njtech_hemengjie@qq.com)
+// SPDX-License-Identifier: Apache-2.0
+
