@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    local_client::LocalClient,
-    persistent_safety_storage::PersistentSafetyStorage,
-    SafetyRules, TSafetyRules,
+    local_client::LocalClient, persistent_safety_storage::PersistentSafetyStorage, SafetyRules,
+    TSafetyRules,
 };
 use diem_config::config::{SafetyRulesConfig, SafetyRulesService};
 use diem_infallible::RwLock;
@@ -58,7 +57,9 @@ impl SafetyRulesManager {
         let storage = storage(config);
         let verify_vote_proposal_signature = config.verify_vote_proposal_signature;
         let export_consensus_key = config.export_consensus_key;
-        match config.service {
+        // TODO SafetyRulesService hardcode->local
+        let dev_config_service=SafetyRulesService::Local;
+        match dev_config_service {
             SafetyRulesService::Local => Self::new_local(
                 storage,
                 verify_vote_proposal_signature,

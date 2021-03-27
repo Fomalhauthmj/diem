@@ -4,7 +4,7 @@
 use crate::{
     counters,
     logging::{self, LogEntry, LogEvent},
-    Error
+    Error,
 };
 use consensus_types::{common::Author, safety_data::SafetyData};
 use diem_crypto::{

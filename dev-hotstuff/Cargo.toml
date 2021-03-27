@@ -64,6 +64,7 @@ executor-test-helpers = { path = "../execution/executor-test-helpers" }
 diem-config = { path = "../config", features = ["fuzzing"] }
 diem-mempool = { path = "../mempool", features = ["fuzzing"] }
 #dev-safety-rules = { path = "dev-safety-rules", features = ["testing"] }
+dev-safety-rules = { path = "dev-safety-rules"}
 vm-genesis = { path = "../language/tools/vm-genesis" }
 vm-validator = { path = "../vm-validator" }
 
