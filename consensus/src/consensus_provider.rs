@@ -34,7 +34,7 @@ pub fn start_consensus(
     reconfig_events: diem_channel::Receiver<(), OnChainConfigPayload>,
 ) -> Runtime {
     let runtime = runtime::Builder::new_multi_thread()
-        .thread_name("consensus")
+        .thread_name("dev-hotstuff")
         .enable_all()
         .build()
         .expect("Failed to create Tokio runtime!");

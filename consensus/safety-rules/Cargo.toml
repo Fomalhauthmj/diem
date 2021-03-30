@@ -1,10 +1,12 @@
 [package]
 name = "safety-rules"
 version = "0.1.0"
-authors = ["Diem Association <opensource@diem.com>"]
+authors = ["贺梦杰 <njtech_hemengjie@qq.com>"]
 license = "Apache-2.0"
 publish = false
 edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 once_cell = "1.7.2"
@@ -41,14 +43,14 @@ diem-config = { path = "../../config", features = ["fuzzing"] }
 diem-proptest-helpers = { path = "../../common/proptest-helpers" }
 diem-secure-storage = { path = "../../secure/storage", features = ["testing"] }
 
-[[bench]]
-name = "safety_rules"
-harness = false
-required-features = ["testing"]
+#    [[bench]]
+#    name = "safety_rules"
+#    harness = false
+#    required-features = ["testing"]
 
-[[test]]
-name = "binary"
-required-features = ["testing"]
+#    [[test]]
+#    name = "binary"
+#    required-features = ["testing"]
 
 [features]
 default = []

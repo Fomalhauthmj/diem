@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::vote::Vote;
+use diem_crypto::HashValue;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -11,6 +12,7 @@ pub struct SafetyData {
     pub epoch: u64,
     pub last_voted_round: u64,
     pub preferred_round: u64,
+    pub preferred_round_executed_state_id:Option<HashValue>,
     pub last_vote: Option<Vote>,
 }
 
@@ -19,12 +21,14 @@ impl SafetyData {
         epoch: u64,
         last_voted_round: u64,
         preferred_round: u64,
+        preferred_round_executed_state_id:Option<HashValue>,
         last_vote: Option<Vote>,
     ) -> Self {
         Self {
             epoch,
             last_voted_round,
             preferred_round,
+            preferred_round_executed_state_id,
             last_vote,
         }
     }

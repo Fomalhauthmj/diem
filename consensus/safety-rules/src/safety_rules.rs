@@ -35,6 +35,7 @@ use serde::Serialize;
 use std::cmp::Ordering;
 
 /// @TODO consider a cache of verified QCs to cut down on verification costs
+// TODO  使用什么数据结构？如何维护？
 pub struct SafetyRules {
     persistent_storage: PersistentSafetyStorage,
     execution_public_key: Option<Ed25519PublicKey>,
@@ -148,6 +149,7 @@ impl SafetyRules {
         let one_chain_round = quorum_cert.certified_block().round();
         let two_chain_round = quorum_cert.parent_block().round();
 
+        // TODO 根据HotStuff 修改为<= 会导致Error
         if one_chain_round < preferred_round {
             return Err(Error::IncorrectPreferredRound(
                 one_chain_round,
@@ -275,6 +277,7 @@ impl SafetyRules {
                 0,
                 0,
                 None,
+                None,
             ))?;
 
             info!(SafetyLogSchema::new(LogEntry::Epoch, LogEvent::Update).epoch(epoch_state.epoch));
@@ -367,7 +370,12 @@ impl SafetyRules {
         proposed_block
             .validate_signature(&self.epoch_state()?.verifier)
             .map_err(|error| Error::InternalError(error.to_string()))?;
-
+        
+        //  TODO 此处投票逻辑与HotStuff论文有出入?
+        if proposed_block.block_data().round()>safety_data.last_voted_round{
+            //extends from preferred
+        }
+        //
         self.verify_and_update_preferred_round(proposed_block.quorum_cert(), &mut safety_data)?;
         self.verify_and_update_last_vote_round(
             proposed_block.block_data().round(),
@@ -419,6 +427,7 @@ impl SafetyRules {
         let mut safety_data = self.persistent_storage.safety_data()?;
         self.verify_epoch(timeout.epoch(), &safety_data)?;
 
+        // Invalid timeout round
         if timeout.round() <= safety_data.preferred_round {
             return Err(Error::IncorrectPreferredRound(
                 timeout.round(),
