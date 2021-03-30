@@ -160,6 +160,8 @@ impl SafetyRules {
         let updated = match two_chain_round.cmp(&preferred_round) {
             Ordering::Greater => {
                 safety_data.preferred_round = two_chain_round;
+                safety_data.preferred_round_executed_state_id =
+                    Some(quorum_cert.parent_block().executed_state_id());
                 info!(
                     SafetyLogSchema::new(LogEntry::PreferredRound, LogEvent::Update)
                         .preferred_round(safety_data.preferred_round)
@@ -371,22 +373,32 @@ impl SafetyRules {
             .validate_signature(&self.epoch_state()?.verifier)
             .map_err(|error| Error::InternalError(error.to_string()))?;
 
-        //  TODO 此处投票逻辑与HotStuff论文有出入?
+        //  TODO 此处投票逻辑参考HotStuff论文
+        //一些需要用到的变量
+        let proposed_round = proposed_block.block_data().round();
+        let one_chain_round = proposed_block.quorum_cert().certified_block().round();
+        let two_chain_round = proposed_block.quorum_cert().parent_block().round();
+        let preferred_round = safety_data.preferred_round;
+        let last_voted_round = safety_data.last_voted_round;
+
         let safety_rule = vote_proposal
             .accumulator_extension_proof()
             .verify(safety_data.preferred_round_executed_state_id.unwrap())
             .is_ok();
-        let liveness_rule =
-            proposed_block.quorum_cert().certified_block().round() >= safety_data.preferred_round;
-        if proposed_block.block_data().round() > safety_data.last_voted_round
-            && (safety_rule || liveness_rule)
-        {
-            //update
-            self.verify_and_update_preferred_round(proposed_block.quorum_cert(), &mut safety_data)?;
-            self.verify_and_update_last_vote_round(
-                proposed_block.block_data().round(),
-                &mut safety_data,
-            )?;
+        let liveness_rule = one_chain_round >= preferred_round;
+        if proposed_round > last_voted_round && (safety_rule || liveness_rule) {
+            // update last_voted_round
+            safety_data.last_voted_round = proposed_round;
+            // update preferred
+            if two_chain_round > preferred_round {
+                safety_data.preferred_round = two_chain_round;
+                safety_data.preferred_round_executed_state_id = Some(
+                    proposed_block
+                        .quorum_cert()
+                        .parent_block()
+                        .executed_state_id(),
+                );
+            }
         } else {
             return Err(Error::InternalError("无法通过HotStuff投票规则".into()));
         };
