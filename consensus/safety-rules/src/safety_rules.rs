@@ -276,7 +276,7 @@ impl SafetyRules {
                 epoch_state.epoch,
                 0,
                 0,
-                None,
+                Some(ledger_info.transaction_accumulator_hash()),
                 None,
             ))?;
 
@@ -370,17 +370,26 @@ impl SafetyRules {
         proposed_block
             .validate_signature(&self.epoch_state()?.verifier)
             .map_err(|error| Error::InternalError(error.to_string()))?;
-        
+
         //  TODO 此处投票逻辑与HotStuff论文有出入?
-        if proposed_block.block_data().round()>safety_data.last_voted_round{
-            //extends from preferred
-        }
-        //
-        self.verify_and_update_preferred_round(proposed_block.quorum_cert(), &mut safety_data)?;
-        self.verify_and_update_last_vote_round(
-            proposed_block.block_data().round(),
-            &mut safety_data,
-        )?;
+        let safety_rule = vote_proposal
+            .accumulator_extension_proof()
+            .verify(safety_data.preferred_round_executed_state_id.unwrap())
+            .is_ok();
+        let liveness_rule =
+            proposed_block.quorum_cert().certified_block().round() >= safety_data.preferred_round;
+        if proposed_block.block_data().round() > safety_data.last_voted_round
+            && (safety_rule || liveness_rule)
+        {
+            //update
+            self.verify_and_update_preferred_round(proposed_block.quorum_cert(), &mut safety_data)?;
+            self.verify_and_update_last_vote_round(
+                proposed_block.block_data().round(),
+                &mut safety_data,
+            )?;
+        } else {
+            return Err(Error::InternalError("无法通过HotStuff投票规则".into()));
+        };
 
         // Construct and sign vote
         let vote_data = self.extension_check(vote_proposal)?;

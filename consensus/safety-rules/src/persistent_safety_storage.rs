@@ -7,7 +7,10 @@ use crate::{
     Error,
 };
 use consensus_types::{common::Author, safety_data::SafetyData};
-use diem_crypto::{ed25519::{Ed25519PrivateKey, Ed25519PublicKey, Ed25519Signature}, hash::CryptoHash};
+use diem_crypto::{
+    ed25519::{Ed25519PrivateKey, Ed25519PublicKey, Ed25519Signature},
+    hash::CryptoHash,
+};
 use diem_global_constants::{CONSENSUS_KEY, EXECUTION_KEY, OWNER_ACCOUNT, SAFETY_DATA, WAYPOINT};
 use diem_logger::prelude::*;
 use diem_secure_storage::{CryptoStorage, KVStorage, Storage};
@@ -39,7 +42,7 @@ impl PersistentSafetyStorage {
         waypoint: Waypoint,
         enable_cached_safety_data: bool,
     ) -> Self {
-        let safety_data = SafetyData::new(1, 0, 0,None,None);
+        let safety_data = SafetyData::new(1, 0, 0, None, None);
         Self::initialize_(
             &mut internal_store,
             safety_data.clone(),
@@ -206,7 +209,7 @@ mod tests {
         assert_eq!(safety_data.preferred_round, 0);
 
         safety_storage
-            .set_safety_data(SafetyData::new(9, 8, 1, None,None))
+            .set_safety_data(SafetyData::new(9, 8, 1, None, None))
             .unwrap();
 
         let safety_data = safety_storage.safety_data().unwrap();

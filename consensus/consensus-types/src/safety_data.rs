@@ -12,7 +12,7 @@ pub struct SafetyData {
     pub epoch: u64,
     pub last_voted_round: u64,
     pub preferred_round: u64,
-    pub preferred_round_executed_state_id:Option<HashValue>,
+    pub preferred_round_executed_state_id: Option<HashValue>,
     pub last_vote: Option<Vote>,
 }
 
@@ -21,7 +21,7 @@ impl SafetyData {
         epoch: u64,
         last_voted_round: u64,
         preferred_round: u64,
-        preferred_round_executed_state_id:Option<HashValue>,
+        preferred_round_executed_state_id: Option<HashValue>,
         last_vote: Option<Vote>,
     ) -> Self {
         Self {
