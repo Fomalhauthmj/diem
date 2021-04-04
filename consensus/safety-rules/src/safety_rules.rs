@@ -32,16 +32,17 @@ use diem_types::{
     ledger_info::LedgerInfo, waypoint::Waypoint,
 };
 use serde::Serialize;
-use std::cmp::Ordering;
+use std::{cmp::Ordering, collections::HashSet, mem};
 
 /// @TODO consider a cache of verified QCs to cut down on verification costs
-// TODO  使用什么数据结构？如何维护？
+// README  使用什么数据结构？-> HashSet 如何维护？-> 时间维护
 pub struct SafetyRules {
     persistent_storage: PersistentSafetyStorage,
     execution_public_key: Option<Ed25519PublicKey>,
     export_consensus_key: bool,
     validator_signer: Option<ConfigurableValidatorSigner>,
     epoch_state: Option<EpochState>,
+    verified_qc: HashSet<(HashValue, Round)>,
 }
 
 impl SafetyRules {
@@ -67,6 +68,7 @@ impl SafetyRules {
             export_consensus_key,
             validator_signer: None,
             epoch_state: None,
+            verified_qc: HashSet::new(),
         }
     }
 
@@ -149,7 +151,7 @@ impl SafetyRules {
         let one_chain_round = quorum_cert.certified_block().round();
         let two_chain_round = quorum_cert.parent_block().round();
 
-        // TODO 根据HotStuff 修改为<= 会导致Error
+        // README 若根据HotStuff 修改为<= 会导致Error
         if one_chain_round < preferred_round {
             return Err(Error::IncorrectPreferredRound(
                 one_chain_round,
@@ -225,11 +227,35 @@ impl SafetyRules {
     }
 
     /// This verifies a QC has valid signatures.
-    fn verify_qc(&self, qc: &QuorumCert) -> Result<(), Error> {
+    fn verify_qc(&mut self, qc: &QuorumCert) -> Result<(), Error> {
         let epoch_state = self.epoch_state()?;
-
+        if self
+            .verified_qc
+            .contains(&(qc.hash(), qc.certified_block().round()))
+        {
+            debug!("成功跳过验证");
+            return Ok(());
+        }
         qc.verify(&epoch_state.verifier)
             .map_err(|e| Error::InvalidQuorumCertificate(e.to_string()))?;
+        self.verified_qc
+            .insert((qc.hash(), qc.certified_block().round()));
+        if self.verified_qc.len() > 1_000 {
+            debug!("存储数量超过1_000，触发清理");
+            debug!(
+                "清理前内存占用：{} * {} bytes",
+                self.verified_qc.len(),
+                mem::size_of::<(HashValue, Round)>()
+            );
+            let safety_data = self.persistent_storage.safety_data()?;
+            self.verified_qc
+                .drain_filter(|(_, round)| *round < safety_data.preferred_round);
+            debug!(
+                "清理前内存占用：{} * {} bytes",
+                self.verified_qc.len(),
+                mem::size_of::<(HashValue, Round)>()
+            );
+        }
         Ok(())
     }
 
@@ -373,8 +399,8 @@ impl SafetyRules {
             .validate_signature(&self.epoch_state()?.verifier)
             .map_err(|error| Error::InternalError(error.to_string()))?;
 
-        //  TODO 此处投票逻辑参考HotStuff论文
-        //一些需要用到的变量
+        //  README 此处投票逻辑参考HotStuff论文
+        //         一些需要用到的变量
         let proposed_round = proposed_block.block_data().round();
         let one_chain_round = proposed_block.quorum_cert().certified_block().round();
         let two_chain_round = proposed_block.quorum_cert().parent_block().round();

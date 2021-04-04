@@ -57,7 +57,7 @@ impl SafetyRulesManager {
         let storage = storage(config);
         let verify_vote_proposal_signature = config.verify_vote_proposal_signature;
         let export_consensus_key = config.export_consensus_key;
-        // TODO SafetyRulesService hardcode->local
+        // README SafetyRulesService固定为local
         let dev_config_service = SafetyRulesService::Local;
         match dev_config_service {
             SafetyRulesService::Local => Self::new_local(

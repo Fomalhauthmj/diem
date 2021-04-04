@@ -1,4 +1,5 @@
 cd ~/diem
+cargo check
 cargo fmt
 cargo build -p consensus --release
 cargo build -p diem-node --release

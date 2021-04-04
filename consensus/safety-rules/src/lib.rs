@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #![forbid(unsafe_code)]
+#![feature(hash_drain_filter)]
 
 mod configurable_validator_signer;
 mod consensus_state;
