@@ -57,13 +57,16 @@ impl SafetyRulesManager {
         let storage = storage(config);
         let verify_vote_proposal_signature = config.verify_vote_proposal_signature;
         let export_consensus_key = config.export_consensus_key;
-        // README SafetyRulesService固定为local
+        // DEVFLAG 是否启用verified qc cache
+        let enable_cached_verified_qcs = config.enable_cached_verified_qcs;
+        // DEVFLAG SafetyRulesService固定为local
         let dev_config_service = SafetyRulesService::Local;
         match dev_config_service {
             SafetyRulesService::Local => Self::new_local(
                 storage,
                 verify_vote_proposal_signature,
                 export_consensus_key,
+                enable_cached_verified_qcs,
             ),
             _ => panic!("Unimplemented SafetyRulesService: {:?}", config.service),
         }
@@ -73,11 +76,13 @@ impl SafetyRulesManager {
         storage: PersistentSafetyStorage,
         verify_vote_proposal_signature: bool,
         export_consensus_key: bool,
+        enable_cached_verified_qcs: bool,
     ) -> Self {
         let safety_rules = SafetyRules::new(
             storage,
             verify_vote_proposal_signature,
             export_consensus_key,
+            enable_cached_verified_qcs,
         );
         Self {
             internal_safety_rules: SafetyRulesWrapper::Local(Arc::new(RwLock::new(safety_rules))),

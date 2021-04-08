@@ -35,14 +35,14 @@ use serde::Serialize;
 use std::{cmp::Ordering, collections::HashSet, mem};
 
 /// @TODO consider a cache of verified QCs to cut down on verification costs
-// README  使用什么数据结构？-> HashSet 如何维护？-> 时间维护
+// DEVFLAG  使用什么数据结构？-> HashSet 如何维护？-> Round维护
 pub struct SafetyRules {
     persistent_storage: PersistentSafetyStorage,
     execution_public_key: Option<Ed25519PublicKey>,
     export_consensus_key: bool,
     validator_signer: Option<ConfigurableValidatorSigner>,
     epoch_state: Option<EpochState>,
-    verified_qc: HashSet<(HashValue, Round)>,
+    verified_qcs: Option<HashSet<(HashValue, Round)>>,
 }
 
 impl SafetyRules {
@@ -52,6 +52,7 @@ impl SafetyRules {
         persistent_storage: PersistentSafetyStorage,
         verify_vote_proposal_signature: bool,
         export_consensus_key: bool,
+        enable_cached_verified_qcs: bool,
     ) -> Self {
         let execution_public_key = if verify_vote_proposal_signature {
             Some(
@@ -62,13 +63,18 @@ impl SafetyRules {
         } else {
             None
         };
+        let verified_qcs = if enable_cached_verified_qcs {
+            Some(HashSet::new())
+        } else {
+            None
+        };
         Self {
             persistent_storage,
             execution_public_key,
             export_consensus_key,
             validator_signer: None,
             epoch_state: None,
-            verified_qc: HashSet::new(),
+            verified_qcs,
         }
     }
 
@@ -151,7 +157,7 @@ impl SafetyRules {
         let one_chain_round = quorum_cert.certified_block().round();
         let two_chain_round = quorum_cert.parent_block().round();
 
-        // README 若根据HotStuff 修改为<= 会导致Error
+        // DEVFLAG 若根据HotStuff 修改为<= 会导致Error
         if one_chain_round < preferred_round {
             return Err(Error::IncorrectPreferredRound(
                 one_chain_round,
@@ -229,32 +235,39 @@ impl SafetyRules {
     /// This verifies a QC has valid signatures.
     fn verify_qc(&mut self, qc: &QuorumCert) -> Result<(), Error> {
         let epoch_state = self.epoch_state()?;
-        if self
-            .verified_qc
-            .contains(&(qc.hash(), qc.certified_block().round()))
+        if self.verified_qcs.is_some()
+            && self
+                .verified_qcs
+                .as_ref()
+                .unwrap()
+                .contains(&(qc.hash(), qc.certified_block().round()))
         {
-            debug!("成功跳过验证");
+            debug!("成功跳过QC验证");
             return Ok(());
         }
+        // DEVFLAG 验证耗时？
+        let start_time = std::time::SystemTime::now();
         qc.verify(&epoch_state.verifier)
             .map_err(|e| Error::InvalidQuorumCertificate(e.to_string()))?;
-        self.verified_qc
-            .insert((qc.hash(), qc.certified_block().round()));
-        if self.verified_qc.len() > 1_000 {
-            debug!("存储数量超过1_000，触发清理");
-            debug!(
-                "清理前内存占用：{} * {} bytes",
-                self.verified_qc.len(),
-                mem::size_of::<(HashValue, Round)>()
-            );
-            let safety_data = self.persistent_storage.safety_data()?;
-            self.verified_qc
-                .drain_filter(|(_, round)| *round < safety_data.preferred_round);
-            debug!(
-                "清理前内存占用：{} * {} bytes",
-                self.verified_qc.len(),
-                mem::size_of::<(HashValue, Round)>()
-            );
+        debug!("验证耗时{:?}", start_time.elapsed().unwrap());
+        if self.verified_qcs.is_some() {
+            let verified_qcs = self.verified_qcs.as_mut().unwrap();
+            verified_qcs.insert((qc.hash(), qc.certified_block().round()));
+            if verified_qcs.len() > 100_000 {
+                debug!("存储数量超过100_000，触发清理");
+                debug!(
+                    "清理前内存占用：{} * {} bytes",
+                    verified_qcs.len(),
+                    mem::size_of::<(HashValue, Round)>()
+                );
+                let safety_data = self.persistent_storage.safety_data()?;
+                verified_qcs.drain_filter(|(_, round)| *round < safety_data.preferred_round);
+                debug!(
+                    "清理后内存占用：{} * {} bytes",
+                    verified_qcs.len(),
+                    mem::size_of::<(HashValue, Round)>()
+                );
+            }
         }
         Ok(())
     }
@@ -399,7 +412,7 @@ impl SafetyRules {
             .validate_signature(&self.epoch_state()?.verifier)
             .map_err(|error| Error::InternalError(error.to_string()))?;
 
-        //  README 此处投票逻辑参考HotStuff论文
+        //  DEVFLAG 此处投票逻辑参考HotStuff论文
         //         一些需要用到的变量
         let proposed_round = proposed_block.block_data().round();
         let one_chain_round = proposed_block.quorum_cert().certified_block().round();
