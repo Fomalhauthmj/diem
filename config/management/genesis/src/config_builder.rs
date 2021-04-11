@@ -4,11 +4,12 @@
 use crate::{layout::Layout, storage_helper::StorageHelper, swarm_config::BuildSwarm};
 use diem_config::{
     config::{
-        DiscoveryMethod, Identity, NodeConfig, OnDiskStorageConfig, SafetyRulesService,
-        SecureBackend, WaypointConfig,
+        DiscoveryMethod, Identity, NodeConfig, OnDiskStorageConfig, RemoteService,
+        SafetyRulesService, SecureBackend, WaypointConfig,
     },
     generator::build_seed_for_network,
     network_id::NetworkId,
+    utils,
 };
 use diem_crypto::ed25519::Ed25519PrivateKey;
 use diem_management::constants::{COMMON_NS, LAYOUT};
@@ -194,7 +195,9 @@ impl<T: AsRef<Path>> ValidatorBuilder<T> {
             .unwrap();
         assert_eq!(output.split("match").count(), 5, "Failed to verify genesis");
 
-        config.consensus.safety_rules.service = SafetyRulesService::Thread;
+        config.consensus.safety_rules.service = SafetyRulesService::Process(RemoteService::new(
+            utils::get_available_port_in_multiaddr(true),
+        ));
         config.consensus.safety_rules.backend = self.secure_backend(&local_ns, "safety-rules");
         config.execution.backend = self.secure_backend(&local_ns, "execution");
 

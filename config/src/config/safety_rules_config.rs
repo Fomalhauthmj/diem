@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    config::{LoggerConfig, SecureBackend},
+    config::{Error, LoggerConfig, PersistableConfig, SecureBackend},
     keys::ConfigKey,
 };
 use diem_crypto::{ed25519::Ed25519PrivateKey, Uniform};
@@ -11,7 +11,7 @@ use rand::rngs::StdRng;
 use serde::{Deserialize, Serialize};
 use std::{
     net::{SocketAddr, ToSocketAddrs},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -52,6 +52,10 @@ impl SafetyRulesConfig {
             backend.set_data_dir(data_dir);
         }
     }
+    pub fn save<P: AsRef<Path>>(&mut self, output_path: P) -> Result<(), Error> {
+        self.save_config(&output_path)?;
+        Ok(())
+    }
 }
 
 /// Defines how safety rules should be executed
@@ -76,6 +80,9 @@ pub struct RemoteService {
 }
 
 impl RemoteService {
+    pub fn new(server_address: NetworkAddress) -> Self {
+        Self { server_address }
+    }
     pub fn server_address(&self) -> SocketAddr {
         self.server_address
             .to_socket_addrs()

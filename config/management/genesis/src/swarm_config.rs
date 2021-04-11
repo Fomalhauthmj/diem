@@ -28,8 +28,10 @@ impl SwarmConfig {
             std::fs::create_dir_all(&node_dir)?;
 
             let node_path = node_dir.join("node.yaml");
+            let safety_rules_path = node_dir.join("safety_rules.yaml");
             config.set_data_dir(node_dir);
             config.save(&node_path)?;
+            config.consensus.safety_rules.save(&safety_rules_path)?;
             config_files.push(node_path);
         }
 

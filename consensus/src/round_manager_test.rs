@@ -107,7 +107,8 @@ impl NodeSetup {
                 waypoint,
                 true,
             );
-            let safety_rules_manager = SafetyRulesManager::new_local(safety_storage, false, false);
+            let safety_rules_manager =
+                SafetyRulesManager::new_local(safety_storage, false, false, true);
 
             nodes.push(Self::new(
                 playground,
@@ -868,11 +869,12 @@ fn safety_rules_crash() {
             true,
         );
 
-        node.safety_rules_manager = SafetyRulesManager::new_local(safety_storage, false, false);
+        node.safety_rules_manager =
+            SafetyRulesManager::new_local(safety_storage, false, false, true);
         let safety_rules =
             MetricsSafetyRules::new(node.safety_rules_manager.client(), node.storage.clone());
         node.round_manager.set_safety_rules(safety_rules);
-    };
+    }
 
     timed_block_on(&mut runtime, async {
         for _ in 0..2 {
