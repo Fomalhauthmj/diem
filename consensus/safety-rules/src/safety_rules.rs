@@ -98,6 +98,8 @@ impl SafetyRules {
     /// Check if the executed result extends the parent result.
     fn extension_check(&self, vote_proposal: &VoteProposal) -> Result<VoteData, Error> {
         let proposed_block = vote_proposal.block();
+        //DEVFLAG extension check 耗时
+        let start_time = std::time::SystemTime::now();
         let new_tree = vote_proposal
             .accumulator_extension_proof()
             .verify(
@@ -107,6 +109,7 @@ impl SafetyRules {
                     .executed_state_id(),
             )
             .map_err(|e| Error::InvalidAccumulatorExtension(e.to_string()))?;
+        info!("extension check耗时{:?}", start_time.elapsed().unwrap());
         Ok(VoteData::new(
             proposed_block.gen_block_info(
                 new_tree.root_hash(),
@@ -242,27 +245,27 @@ impl SafetyRules {
                 .unwrap()
                 .contains(&(qc.hash(), qc.certified_block().round()))
         {
-            debug!("成功跳过QC验证");
+            info!("成功跳过QC验证");
             return Ok(());
         }
         // DEVFLAG 验证耗时？
         let start_time = std::time::SystemTime::now();
         qc.verify(&epoch_state.verifier)
             .map_err(|e| Error::InvalidQuorumCertificate(e.to_string()))?;
-        debug!("验证耗时{:?}", start_time.elapsed().unwrap());
+        info!("验证QC耗时{:?}", start_time.elapsed().unwrap());
         if self.verified_qcs.is_some() {
             let verified_qcs = self.verified_qcs.as_mut().unwrap();
             verified_qcs.insert((qc.hash(), qc.certified_block().round()));
             if verified_qcs.len() > 100_000 {
-                debug!("存储数量超过100_000，触发清理");
-                debug!(
+                info!("存储数量超过100_000，触发清理");
+                info!(
                     "清理前内存占用：{} * {} bytes",
                     verified_qcs.len(),
                     mem::size_of::<(HashValue, Round)>()
                 );
                 let safety_data = self.persistent_storage.safety_data()?;
                 verified_qcs.drain_filter(|(_, round)| *round < safety_data.preferred_round);
-                debug!(
+                info!(
                     "清理后内存占用：{} * {} bytes",
                     verified_qcs.len(),
                     mem::size_of::<(HashValue, Round)>()
