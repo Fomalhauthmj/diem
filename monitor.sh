@@ -1,12 +1,13 @@
 #! /bin/bash
 # tmux 会话
 session1="monitor_swarm"
-# 终止可能存在的监控会话
-tmux kill-session -t $session1
+# 终止可能存在的tmux server
+tmux kill-server
+tmux start-server
 echo "尝试启动本地集群，启动信息写入临时文件：/home/hmj/temp/temp_swarm_info"
-tmux new-session -d -s $session1 -n swarm '/home/hmj/diem/target/release/diem-swarm_leader_reputation --diem-node /home/hmj/diem/target/release/diem-node -n 4 > /home/hmj/temp/temp_swarm_info'
-echo "等待10s"
-sleep 10s
+tmux new-session -d -s $session1 -n swarm '/home/hmj/diem/target/release/diem-swarm --diem-node /home/hmj/diem/target/release/diem-node -n 4 > /home/hmj/temp/temp_swarm_info'
+echo "等待20s"
+sleep 20s
 # 获得集群目录
 swarm_path=`cat /home/hmj/temp/temp_swarm_info | grep -P '\--mint-file.*mint.key' -o | uniq | sed 's/\-\-mint\-file \"\(.*\)mint.key/\1/g'`
 # 获得集群测试命令参数
@@ -46,6 +47,7 @@ echo "$node_1_safety_rules_config_path"> /home/hmj/temp/temp_node_1_safety_rules
 echo "$node_2_safety_rules_config_path"> /home/hmj/temp/temp_node_2_safety_rules_config_path
 echo "$node_3_safety_rules_config_path"> /home/hmj/temp/temp_node_3_safety_rules_config_path
 # 启动集群各节点的sr服务
+# > /home/hmj/temp/temp_sr_log0 2>&1
 tmux new-window -t $session1 -n sr0 'export PUSH_METRICS_ENDPOINT=http://localhost:9091/metrics/job/sr0;cat /home/hmj/temp/temp_node_0_safety_rules_config_path | xargs -I {} /home/hmj/diem/target/release/safety-rules {} > /home/hmj/temp/temp_sr_log0 2>&1'
 tmux new-window -t $session1 -n sr1 'export PUSH_METRICS_ENDPOINT=http://localhost:9091/metrics/job/sr1;cat /home/hmj/temp/temp_node_1_safety_rules_config_path | xargs -I {} /home/hmj/diem/target/release/safety-rules {} > /home/hmj/temp/temp_sr_log1 2>&1'
 tmux new-window -t $session1 -n sr2 'export PUSH_METRICS_ENDPOINT=http://localhost:9091/metrics/job/sr2;cat /home/hmj/temp/temp_node_2_safety_rules_config_path | xargs -I {} /home/hmj/diem/target/release/safety-rules {} > /home/hmj/temp/temp_sr_log2 2>&1'
