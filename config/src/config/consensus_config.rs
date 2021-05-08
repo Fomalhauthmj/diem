@@ -35,6 +35,7 @@ impl Default for ConsensusConfig {
             mempool_txn_pull_timeout_ms: 1000,
             mempool_executed_txn_timeout_ms: 1000,
             round_initial_timeout_ms: 1000,
+            //DEVFLAG 默认leader election
             proposer_type: ConsensusProposerType::LeaderReputation(LeaderReputationConfig {
                 active_weights: 99,
                 inactive_weights: 1,

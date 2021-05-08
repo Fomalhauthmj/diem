@@ -5,7 +5,7 @@ session1="monitor_swarm"
 tmux kill-server
 tmux start-server
 echo "尝试启动本地集群，启动信息写入临时文件：/home/hmj/temp/temp_swarm_info"
-tmux new-session -d -s $session1 -n swarm '/home/hmj/diem/target/release/diem-swarm --diem-node /home/hmj/diem/target/release/diem-node -n 4 > /home/hmj/temp/temp_swarm_info'
+tmux new-session -d -s $session1 -n swarm '/home/hmj/diem/target/release/diem-swarm-lr --diem-node /home/hmj/diem/target/release/diem-node -n 4 > /home/hmj/temp/temp_swarm_info'
 echo "等待20s"
 sleep 20s
 # 获得集群目录

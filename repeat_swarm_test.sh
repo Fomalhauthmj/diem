@@ -15,7 +15,7 @@ for i in {1..5};
 do 
     echo "Test $i LeaderReputation part:"
     echo "尝试启动本地集群，启动信息写入临时文件：/home/hmj/temp/temp_swarm_info"
-    tmux new-session -d -s $session1 -n swarm 'target/release/diem-swarm_leader_reputation --diem-node target/release/diem-node -n 4 > /home/hmj/temp/temp_swarm_info'
+    tmux new-session -d -s $session1 -n swarm 'target/release/diem-swarm-lr --diem-node target/release/diem-node -n 4 > /home/hmj/temp/temp_swarm_info'
     sleep 20s
     swarm_path=`cat /home/hmj/temp/temp_swarm_info | grep -P '\--mint-file.*mint.key' -o | uniq | sed 's/\-\-mint\-file \"\(.*\)mint.key/\1/g'`
     cluster_test=`cat /home/hmj/temp/temp_swarm_info | grep -P '\-\-mint\-file.*\-\-emit\-tx' -o`

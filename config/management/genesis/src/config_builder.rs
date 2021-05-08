@@ -194,7 +194,7 @@ impl<T: AsRef<Path>> ValidatorBuilder<T> {
             .verify_genesis(&local_ns, genesis_path.path())
             .unwrap();
         assert_eq!(output.split("match").count(), 5, "Failed to verify genesis");
-
+        //DEVFLAG 将safety_rules service 修改为Process方式
         config.consensus.safety_rules.service = SafetyRulesService::Process(RemoteService::new(
             utils::get_available_port_in_multiaddr(true),
         ));
