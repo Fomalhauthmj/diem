@@ -48,10 +48,12 @@ do
     echo "$effect_port" | xargs iptables -D INPUT -p tcp -m statistic --mode random --probability $Loss -j DROP --dport
     # 终止测试会话
     tmux kill-session -t $session1
+    # 删除测试目录
+    rm -rf "$swarm_path"
 
     echo "Test $i RotatingProposer part:"
     echo "尝试启动本地集群，启动信息写入临时文件：/home/hmj/temp/temp_swarm_info"
-    tmux new-session -d -s $session2 -n swarm 'target/release/diem-swarm_rotating_proposer --diem-node target/release/diem-node -n 4 > /home/hmj/temp/temp_swarm_info'
+    tmux new-session -d -s $session2 -n swarm 'target/release/diem-swarm-rp --diem-node target/release/diem-node -n 4 > /home/hmj/temp/temp_swarm_info'
     sleep 20s
     swarm_path=`cat /home/hmj/temp/temp_swarm_info | grep -P '\--mint-file.*mint.key' -o | uniq | sed 's/\-\-mint\-file \"\(.*\)mint.key/\1/g'`
     cluster_test=`cat /home/hmj/temp/temp_swarm_info | grep -P '\-\-mint\-file.*\-\-emit\-tx' -o`
@@ -84,6 +86,8 @@ do
     echo "$effect_port" | xargs iptables -D INPUT -p tcp -m statistic --mode random --probability $Loss -j DROP --dport
     # 终止测试会话 
     tmux kill-session -t $session2
+    # 删除测试目录
+    rm -rf "$swarm_path"
 done
 # 设置修改权限
 chmod a+w /home/hmj/temp/LeaderReputation.txt
